@@ -1,0 +1,234 @@
+# =============================================================================
+# AI-GENERATED PR LABELER
+# Automatically labels PRs that appear to be AI/Copilot generated
+# =============================================================================
+#
+# This workflow detects PRs that may contain AI-generated code by looking for:
+# - Common AI assistant patterns in commit messages
+# - GitHub Copilot attribution
+# - Known AI tool signatures
+# - Automated PR creation patterns
+#
+# Why this matters:
+# - AI-generated code may require extra security review
+# - Helps track AI usage in the codebase
+# - Enables filtering PRs for manual review
+# =============================================================================
+
+name: "AI PR Labeler"
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+  pull_request_target:
+    types: [opened, edited, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  label-ai-pr:
+    name: Detect & Label AI-Generated PRs
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 50  # Get recent commits for analysis
+          
+      - name: Analyze PR for AI patterns
+        id: ai-detection
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const prTitle = context.payload.pull_request.title || '';
+            const prBody = context.payload.pull_request.body || '';
+            const prAuthor = context.payload.pull_request.user.login;
+            
+            // AI detection patterns
+            const aiPatterns = {
+              // Common AI assistant references
+              assistants: [
+                /copilot/i,
+                /github\s*copilot/i,
+                /chatgpt/i,
+                /gpt-4/i,
+                /gpt-3/i,
+                /claude/i,
+                /anthropic/i,
+                /openai/i,
+                /bard/i,
+                /gemini/i,
+                /ai\s*generated/i,
+                /ai-generated/i,
+                /generated\s*by\s*ai/i,
+                /cursor/i,
+                /codewhisperer/i,
+                /tabnine/i,
+                /cody/i,
+                /sourcegraph/i,
+                /replit\s*ai/i,
+                /ghostwriter/i,
+              ],
+              
+              // Common AI-generated code patterns in descriptions
+              descriptions: [
+                /as\s*an\s*ai/i,
+                /i'm\s*an\s*ai/i,
+                /i\s*am\s*an\s*ai/i,
+                /language\s*model/i,
+                /large\s*language\s*model/i,
+                /llm/i,
+                /trained\s*by/i,
+                /here's?\s*the\s*code/i,
+                /here\s*is\s*the\s*implementation/i,
+                /i've\s*implemented/i,
+                /i\s*have\s*implemented/i,
+              ],
+              
+              // Bot-like author patterns
+              bots: [
+                /\[bot\]$/i,
+                /bot$/i,
+                /-bot$/i,
+                /dependabot/i,
+                /renovate/i,
+                /snyk-bot/i,
+                /github-actions/i,
+                /deepsource/i,
+              ],
+              
+              // Automated PR patterns
+              automated: [
+                /auto-generated/i,
+                /automatically\s*generated/i,
+                /automated\s*pr/i,
+                /automated\s*pull\s*request/i,
+              ]
+            };
+            
+            let isAiGenerated = false;
+            let detectionReasons = [];
+            
+            // Check PR title and body against patterns
+            const textToCheck = `${prTitle} ${prBody}`;
+            
+            for (const [category, patterns] of Object.entries(aiPatterns)) {
+              for (const pattern of patterns) {
+                if (pattern.test(textToCheck)) {
+                  isAiGenerated = true;
+                  detectionReasons.push(`${category}: matched "${pattern}"`);
+                }
+              }
+            }
+            
+            // Check if author is a bot
+            for (const pattern of aiPatterns.bots) {
+              if (pattern.test(prAuthor)) {
+                isAiGenerated = true;
+                detectionReasons.push(`bot author: ${prAuthor}`);
+              }
+            }
+            
+            // Get commits and check messages
+            try {
+              const commits = await github.rest.pulls.listCommits({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber,
+              });
+              
+              for (const commit of commits.data) {
+                const message = commit.commit.message || '';
+                for (const [category, patterns] of Object.entries(aiPatterns)) {
+                  for (const pattern of patterns) {
+                    if (pattern.test(message)) {
+                      isAiGenerated = true;
+                      detectionReasons.push(`commit message: matched "${pattern}"`);
+                    }
+                  }
+                }
+              }
+            } catch (error) {
+              console.log('Could not fetch commits:', error.message);
+            }
+            
+            // Set outputs
+            core.setOutput('is_ai_generated', isAiGenerated);
+            core.setOutput('detection_reasons', detectionReasons.join('; '));
+            
+            return { isAiGenerated, detectionReasons };
+            
+      - name: Add AI-generated label
+        if: steps.ai-detection.outputs.is_ai_generated == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            
+            // Add the AI-generated label
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              labels: ['ai-generated', 'needs-security-review']
+            });
+            
+            // Add a comment explaining the label
+            const reasons = '${{ steps.ai-detection.outputs.detection_reasons }}';
+            
+            const comment = `## 🤖 AI-Generated Code Detected
+
+            This pull request has been automatically labeled as potentially containing AI-generated code.
+
+            **Detection signals:**
+            ${reasons.split('; ').map(r => `- ${r}`).join('\n')}
+
+            **Recommended actions:**
+            1. Review code carefully for security issues common in AI-generated code
+            2. Verify all logic and edge cases
+            3. Check for hardcoded values or placeholder code
+            4. Ensure proper error handling
+            5. Validate any cryptographic or security-sensitive code
+
+            ---
+            *This is an automated detection. If this is a false positive, you can remove the label.*`;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: comment
+            });
+
+      - name: Ensure labels exist
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = [
+              { name: 'ai-generated', color: '7057ff', description: 'PR contains AI-generated code' },
+              { name: 'needs-security-review', color: 'd73a4a', description: 'Requires security team review' }
+            ];
+            
+            for (const label of labels) {
+              try {
+                await github.rest.issues.getLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: label.name
+                });
+              } catch (error) {
+                if (error.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    name: label.name,
+                    color: label.color,
+                    description: label.description
+                  });
+                }
+              }
+            }

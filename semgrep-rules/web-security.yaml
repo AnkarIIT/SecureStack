@@ -1,0 +1,338 @@
+# =============================================================================
+# SEMGREP CUSTOM RULES: Web Application Security
+# OWASP Top 10 and Common Web Vulnerabilities
+# =============================================================================
+
+rules:
+  # ---------------------------------------------------------------------------
+  # XSS - Cross-Site Scripting
+  # ---------------------------------------------------------------------------
+  - id: react-dangerously-set-html
+    patterns:
+      - pattern: dangerouslySetInnerHTML={{__html: $X}}
+    pattern-not: dangerouslySetInnerHTML={{__html: "..."}}
+    message: |
+      dangerouslySetInnerHTML with dynamic content can lead to XSS.
+      
+      Recommendation:
+      - Sanitize HTML with DOMPurify
+      - Use React's built-in escaping
+      - Avoid raw HTML insertion when possible
+    severity: WARNING
+    languages:
+      - javascript
+      - typescript
+    metadata:
+      category: security
+      subcategory: xss
+      cwe: "CWE-79: Cross-site Scripting (XSS)"
+      owasp: "A03:2021 - Injection"
+      confidence: MEDIUM
+
+  - id: document-write
+    patterns:
+      - pattern-either:
+          - pattern: document.write($X)
+          - pattern: document.writeln($X)
+    message: |
+      document.write() can be used for XSS attacks.
+      
+      Recommendation:
+      - Use DOM manipulation methods
+      - Use textContent for text
+      - Use createElement for elements
+    severity: WARNING
+    languages:
+      - javascript
+      - typescript
+    metadata:
+      category: security
+      subcategory: xss
+      cwe: "CWE-79: Cross-site Scripting (XSS)"
+      confidence: MEDIUM
+
+  - id: innerhtml-assignment
+    patterns:
+      - pattern: $EL.innerHTML = $X
+    pattern-not: $EL.innerHTML = "..."
+    message: |
+      Direct innerHTML assignment with dynamic content can lead to XSS.
+      
+      Recommendation:
+      - Use textContent for text
+      - Use DOMPurify to sanitize HTML
+      - Use DOM methods to create elements
+    severity: WARNING
+    languages:
+      - javascript
+      - typescript
+    metadata:
+      category: security
+      subcategory: xss
+      cwe: "CWE-79: Cross-site Scripting (XSS)"
+      confidence: MEDIUM
+
+  # ---------------------------------------------------------------------------
+  # Command Injection
+  # ---------------------------------------------------------------------------
+  - id: command-injection-child-process
+    patterns:
+      - pattern-either:
+          - pattern: child_process.exec($CMD, ...)
+          - pattern: exec($CMD, ...)
+          - pattern: execSync($CMD, ...)
+          - pattern: spawn($CMD, ...)
+          - pattern: spawnSync($CMD, ...)
+    pattern-not: child_process.exec("...", ...)
+    pattern-not: exec("...", ...)
+    message: |
+      Command execution with dynamic input can lead to command injection.
+      
+      Recommendation:
+      - Use execFile() with arguments array
+      - Validate and sanitize all inputs
+      - Use allowlists for allowed commands
+    severity: ERROR
+    languages:
+      - javascript
+      - typescript
+    metadata:
+      category: security
+      subcategory: injection
+      cwe: "CWE-78: OS Command Injection"
+      owasp: "A03:2021 - Injection"
+      confidence: MEDIUM
+
+  - id: python-os-system
+    patterns:
+      - pattern-either:
+          - pattern: os.system($CMD)
+          - pattern: os.popen($CMD)
+          - pattern: subprocess.call($CMD, shell=True, ...)
+          - pattern: subprocess.run($CMD, shell=True, ...)
+    message: |
+      Shell command execution with dynamic input is dangerous.
+      
+      Recommendation:
+      - Use subprocess with shell=False and args list
+      - Validate all inputs
+      - Use shlex.quote() for escaping
+    severity: ERROR
+    languages:
+      - python
+    metadata:
+      category: security
+      subcategory: injection
+      cwe: "CWE-78: OS Command Injection"
+      confidence: MEDIUM
+
+  # ---------------------------------------------------------------------------
+  # Path Traversal
+  # ---------------------------------------------------------------------------
+  - id: path-traversal-express
+    patterns:
+      - pattern-either:
+          - pattern: res.sendFile($PATH, ...)
+          - pattern: res.download($PATH, ...)
+          - pattern: fs.readFile($PATH, ...)
+          - pattern: fs.readFileSync($PATH, ...)
+    pattern-inside: |
+      $APP.$METHOD(..., (req, res) => {
+        ...
+      })
+    message: |
+      File operations with user input may allow path traversal.
+      
+      Recommendation:
+      - Use path.join() with a base directory
+      - Validate path doesn't contain ".."
+      - Use path.resolve() and check it starts with allowed directory
+    severity: WARNING
+    languages:
+      - javascript
+      - typescript
+    metadata:
+      category: security
+      subcategory: path-traversal
+      cwe: "CWE-22: Path Traversal"
+      confidence: MEDIUM
+
+  # ---------------------------------------------------------------------------
+  # SSRF - Server-Side Request Forgery
+  # ---------------------------------------------------------------------------
+  - id: ssrf-fetch
+    patterns:
+      - pattern-either:
+          - pattern: fetch($URL, ...)
+          - pattern: axios.get($URL, ...)
+          - pattern: axios.post($URL, ...)
+          - pattern: axios($URL, ...)
+          - pattern: request($URL, ...)
+    pattern-inside: |
+      $APP.$METHOD(..., (req, res) => {
+        ...
+      })
+    message: |
+      HTTP request with user-controlled URL may allow SSRF.
+      
+      Recommendation:
+      - Validate URLs against an allowlist
+      - Block requests to internal/private IPs
+      - Use a URL parser to validate scheme and host
+    severity: WARNING
+    languages:
+      - javascript
+      - typescript
+    metadata:
+      category: security
+      subcategory: ssrf
+      cwe: "CWE-918: Server-Side Request Forgery"
+      owasp: "A10:2021 - SSRF"
+      confidence: LOW
+
+  # ---------------------------------------------------------------------------
+  # Prototype Pollution (JavaScript-specific)
+  # ---------------------------------------------------------------------------
+  - id: prototype-pollution
+    patterns:
+      - pattern-either:
+          - pattern: Object.assign({}, $X)
+          - pattern: |
+              {...$X}
+          - pattern: _.merge({}, $X)
+          - pattern: $.extend(true, {}, $X)
+    pattern-inside: |
+      $APP.$METHOD(..., (req, res) => {
+        ...
+      })
+    message: |
+      Object merging with user input may lead to prototype pollution.
+      
+      Recommendation:
+      - Use Object.create(null) as base
+      - Filter __proto__ and constructor properties
+      - Use a library like safe-flat to safely merge objects
+    severity: WARNING
+    languages:
+      - javascript
+      - typescript
+    metadata:
+      category: security
+      subcategory: prototype-pollution
+      cwe: "CWE-1321: Improperly Controlled Modification of Object Prototype Attributes"
+      confidence: LOW
+
+  # ---------------------------------------------------------------------------
+  # Insecure Cookies
+  # ---------------------------------------------------------------------------
+  - id: insecure-cookie
+    patterns:
+      - pattern-either:
+          - pattern: |
+              res.cookie($NAME, $VALUE, { ..., secure: false, ... })
+          - pattern: |
+              res.cookie($NAME, $VALUE, { ..., httpOnly: false, ... })
+    message: |
+      Cookie set without secure or httpOnly flag.
+      
+      Recommendation:
+      - Set secure: true for HTTPS
+      - Set httpOnly: true to prevent XSS access
+      - Set sameSite: 'strict' or 'lax'
+    severity: WARNING
+    languages:
+      - javascript
+      - typescript
+    metadata:
+      category: security
+      subcategory: session
+      cwe: "CWE-614: Sensitive Cookie in HTTPS Session Without 'Secure' Attribute"
+      confidence: HIGH
+
+  # ---------------------------------------------------------------------------
+  # Missing CSRF Protection
+  # ---------------------------------------------------------------------------
+  - id: missing-csrf-check
+    patterns:
+      - pattern: |
+          $APP.post($PATH, (req, res) => {
+            ...
+          })
+    pattern-not-inside: |
+      $APP.use(csrf(...))
+    message: |
+      POST route without CSRF protection middleware.
+      
+      Recommendation:
+      - Use csurf middleware
+      - Implement CSRF tokens
+      - Use SameSite cookies
+    severity: WARNING
+    languages:
+      - javascript
+      - typescript
+    metadata:
+      category: security
+      subcategory: csrf
+      cwe: "CWE-352: Cross-Site Request Forgery"
+      owasp: "A01:2021 - Broken Access Control"
+      confidence: LOW
+
+  # ---------------------------------------------------------------------------
+  # Weak Cryptography
+  # ---------------------------------------------------------------------------
+  - id: weak-crypto-algorithm
+    patterns:
+      - pattern-either:
+          - pattern: crypto.createHash("md5")
+          - pattern: crypto.createHash("sha1")
+          - pattern: hashlib.md5(...)
+          - pattern: hashlib.sha1(...)
+    message: |
+      Weak cryptographic hash algorithm. MD5 and SHA1 are considered broken.
+      
+      Recommendation:
+      - Use SHA-256 or SHA-3 for hashing
+      - Use bcrypt, scrypt, or Argon2 for passwords
+    severity: WARNING
+    languages:
+      - javascript
+      - typescript
+      - python
+    metadata:
+      category: security
+      subcategory: cryptography
+      cwe: "CWE-328: Use of Weak Hash"
+      owasp: "A02:2021 - Cryptographic Failures"
+      confidence: HIGH
+
+  # ---------------------------------------------------------------------------
+  # Hardcoded CORS Allow All
+  # ---------------------------------------------------------------------------
+  - id: cors-allow-all
+    patterns:
+      - pattern-either:
+          - pattern: |
+              cors({ origin: "*" })
+          - pattern: |
+              cors({ origin: true })
+          - pattern: |
+              "Access-Control-Allow-Origin": "*"
+          - pattern: |
+              res.header("Access-Control-Allow-Origin", "*")
+    message: |
+      CORS configured to allow all origins. This can lead to security issues.
+      
+      Recommendation:
+      - Specify exact allowed origins
+      - Use a whitelist of trusted domains
+      - Be careful with credentials mode
+    severity: WARNING
+    languages:
+      - javascript
+      - typescript
+    metadata:
+      category: security
+      subcategory: cors
+      cwe: "CWE-942: Permissive Cross-domain Policy with Untrusted Domains"
+      confidence: HIGH

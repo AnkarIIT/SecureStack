@@ -1,0 +1,287 @@
+# =============================================================================
+# GITHUB DEPENDABOT CONFIGURATION
+# Automated dependency updates with security focus
+# =============================================================================
+#
+# This configuration enables:
+# - Weekly security updates across multiple ecosystems
+# - Automatic PR creation for vulnerable dependencies
+# - Grouped updates to reduce PR noise
+# - Labels for easy triage
+#
+# Ecosystems supported (auto-detected based on files present):
+# - npm (package.json)
+# - pip (requirements.txt, setup.py, pyproject.toml)
+# - GitHub Actions (workflow files)
+# - Docker (Dockerfile)
+# - Go modules (go.mod)
+# - Cargo/Rust (Cargo.toml)
+# - Composer/PHP (composer.json)
+# - Bundler/Ruby (Gemfile)
+# - NuGet/.NET (*.csproj, packages.config)
+# - Maven/Gradle (pom.xml, build.gradle)
+# =============================================================================
+
+version: 2
+
+registries:
+  # Add private registries here if needed
+  # npm-private:
+  #   type: npm-registry
+  #   url: https://npm.pkg.github.com
+  #   token: ${{ secrets.NPM_TOKEN }}
+
+updates:
+  # ---------------------------------------------------------------------------
+  # NPM / Node.js Dependencies
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "security"
+      - "npm"
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+    groups:
+      # Group all production dependency updates
+      production-dependencies:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+      # Group all dev dependency updates
+      development-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      # Ignore major version updates for stability (review manually)
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    # Security updates are always created regardless of ignore rules
+    versioning-strategy: increase
+
+  # ---------------------------------------------------------------------------
+  # Python Dependencies (pip)
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "security"
+      - "python"
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      python-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ---------------------------------------------------------------------------
+  # GitHub Actions
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "security"
+      - "github-actions"
+    commit-message:
+      prefix: "chore(ci)"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  # ---------------------------------------------------------------------------
+  # Docker Images
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "security"
+      - "docker"
+    commit-message:
+      prefix: "chore(docker)"
+
+  # ---------------------------------------------------------------------------
+  # Go Modules
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "security"
+      - "go"
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      go-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ---------------------------------------------------------------------------
+  # Rust / Cargo
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "security"
+      - "rust"
+    commit-message:
+      prefix: "chore(deps)"
+
+  # ---------------------------------------------------------------------------
+  # Composer / PHP
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: "composer"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "security"
+      - "php"
+    commit-message:
+      prefix: "chore(deps)"
+
+  # ---------------------------------------------------------------------------
+  # Bundler / Ruby
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: "bundler"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "security"
+      - "ruby"
+    commit-message:
+      prefix: "chore(deps)"
+
+  # ---------------------------------------------------------------------------
+  # NuGet / .NET
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "security"
+      - "dotnet"
+    commit-message:
+      prefix: "chore(deps)"
+
+  # ---------------------------------------------------------------------------
+  # Maven / Java
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: "maven"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "security"
+      - "java"
+    commit-message:
+      prefix: "chore(deps)"
+
+  # ---------------------------------------------------------------------------
+  # Gradle / Java/Kotlin
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "security"
+      - "java"
+    commit-message:
+      prefix: "chore(deps)"
+
+  # ---------------------------------------------------------------------------
+  # Terraform
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: "terraform"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "security"
+      - "terraform"
+    commit-message:
+      prefix: "chore(deps)"

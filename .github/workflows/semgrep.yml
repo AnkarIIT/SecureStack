@@ -1,0 +1,196 @@
+# =============================================================================
+# SEMGREP CI WORKFLOW
+# Static Application Security Testing (SAST)
+# =============================================================================
+#
+# Semgrep scans for:
+# - OWASP Top 10 vulnerabilities
+# - Language-specific security issues
+# - AI/Copilot-generated code patterns
+# - Custom security rules
+#
+# Free tier includes:
+# - Unlimited public repos
+# - 20 private repos
+# - Core security rules
+# =============================================================================
+
+name: "Security: Semgrep SAST"
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+      - release/*
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/*.md'
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/*.md'
+  workflow_dispatch:
+  schedule:
+    # Run weekly full scan on Sundays at 3 AM UTC
+    - cron: '0 3 * * 0'
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+
+env:
+  # Semgrep rules to use
+  # See: https://semgrep.dev/explore
+  SEMGREP_RULES: >-
+    p/owasp-top-ten
+    p/security-audit
+    p/secrets
+    p/javascript
+    p/typescript
+    p/nodejs
+    p/react
+    p/python
+    p/golang
+    p/rust
+    p/jwt
+    p/sql-injection
+    p/xss
+    p/command-injection
+    p/path-traversal
+    p/ssrf
+    p/insecure-transport
+    p/default-credentials
+    p/gitleaks
+    ./semgrep-rules/
+
+jobs:
+  semgrep:
+    name: SAST Scan
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep:latest
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Semgrep
+        run: |
+          semgrep scan \
+            --config="$SEMGREP_RULES" \
+            --sarif \
+            --output=semgrep-results.sarif \
+            --error \
+            --verbose \
+            --metrics=off \
+            --timeout=300 \
+            --max-memory=4000 \
+            .
+        env:
+          SEMGREP_RULES: ${{ env.SEMGREP_RULES }}
+        continue-on-error: true  # Continue to upload results even if issues found
+
+      - name: Upload SARIF results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: semgrep-results.sarif
+          
+      - name: Upload scan results as artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: semgrep-results
+          path: semgrep-results.sarif
+          retention-days: 30
+
+      - name: Comment on PR with findings summary
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            try {
+              const sarif = JSON.parse(fs.readFileSync('semgrep-results.sarif', 'utf8'));
+              const results = sarif.runs?.[0]?.results || [];
+              
+              if (results.length === 0) {
+                // No findings, add a success comment
+                const successMessage = `## ✅ Semgrep Security Scan Passed
+                
+                No security issues were detected in this pull request.
+                
+                **Scanned with:**
+                - OWASP Top 10 rules
+                - Language-specific security rules
+                - Custom security patterns
+                
+                ---
+                *Automated security scan by Semgrep*`;
+                
+                github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: successMessage
+                });
+                return;
+              }
+              
+              // Group findings by severity
+              const bySeverity = results.reduce((acc, r) => {
+                const severity = r.level || 'warning';
+                acc[severity] = (acc[severity] || 0) + 1;
+                return acc;
+              }, {});
+              
+              const message = `## 🔍 Semgrep Security Scan Results
+              
+              | Severity | Count |
+              |----------|-------|
+              | 🔴 Error | ${bySeverity.error || 0} |
+              | 🟡 Warning | ${bySeverity.warning || 0} |
+              | 🔵 Note | ${bySeverity.note || 0} |
+              
+              **Total findings: ${results.length}**
+              
+              Please review the Security tab for detailed findings.
+              
+              ---
+              *Automated security scan by Semgrep*`;
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: message
+              });
+            } catch (error) {
+              console.log('Could not parse SARIF results:', error.message);
+            }
+
+  # Separate job for custom rules validation
+  validate-custom-rules:
+    name: Validate Custom Rules
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep:latest
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate Semgrep rules
+        run: |
+          if [ -d "semgrep-rules" ]; then
+            semgrep --validate --config=./semgrep-rules/
+          else
+            echo "No custom rules directory found, skipping validation"
+          fi

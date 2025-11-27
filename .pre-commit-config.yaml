@@ -1,0 +1,135 @@
+# =============================================================================
+# PRE-COMMIT CONFIGURATION
+# Local security checks before commits reach the repository
+# =============================================================================
+#
+# INSTALLATION:
+#   pip install pre-commit
+#   pre-commit install
+#
+# MANUAL RUN:
+#   pre-commit run --all-files
+#
+# UPDATE HOOKS:
+#   pre-commit autoupdate
+# =============================================================================
+
+default_stages: [commit, push]
+fail_fast: false
+
+repos:
+  # ---------------------------------------------------------------------------
+  # GITLEAKS - Secret Detection
+  # Prevents accidental commit of API keys, passwords, tokens, and credentials
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks
+        name: gitleaks - Detect hardcoded secrets
+        description: Detect hardcoded secrets using Gitleaks
+        entry: gitleaks protect --verbose --redact --staged
+        language: golang
+        pass_filenames: false
+
+  # ---------------------------------------------------------------------------
+  # BASIC FILE HYGIENE
+  # Prevents common issues that can affect security and code quality
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      # Prevent giant files from being committed (may contain dumps/backups)
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+        name: check-large-files - Prevent large file commits
+        
+      # Detect private keys
+      - id: detect-private-key
+        name: detect-private-key - Block private key commits
+        
+      # Ensure files end with newline (prevents diff issues)
+      - id: end-of-file-fixer
+        name: end-of-file-fixer - Normalize file endings
+        
+      # Remove trailing whitespace
+      - id: trailing-whitespace
+        name: trailing-whitespace - Clean whitespace
+        
+      # Check for files that would conflict on case-insensitive filesystems
+      - id: check-case-conflict
+        name: check-case-conflict - Prevent case conflicts
+        
+      # Validate JSON syntax
+      - id: check-json
+        name: check-json - Validate JSON files
+        
+      # Validate YAML syntax
+      - id: check-yaml
+        name: check-yaml - Validate YAML files
+        args: ['--unsafe']  # Allow custom tags
+        
+      # Check for merge conflict markers
+      - id: check-merge-conflict
+        name: check-merge-conflict - Detect merge conflicts
+        
+      # Prevent commits directly to main/master
+      - id: no-commit-to-branch
+        name: no-commit-to-branch - Protect main branches
+        args: ['--branch', 'main', '--branch', 'master', '--branch', 'production']
+
+  # ---------------------------------------------------------------------------
+  # SECURITY-FOCUSED YAML CHECKS
+  # Catches common security misconfigurations in YAML files
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        name: yamllint - Lint YAML files
+        args: ['-d', '{extends: relaxed, rules: {line-length: {max: 200}}}']
+
+  # ---------------------------------------------------------------------------
+  # DETECT AWS CREDENTIALS
+  # Extra layer specifically for AWS credential patterns
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: detect-aws-credentials
+        name: detect-aws-credentials - Block AWS credentials
+        args: ['--allow-missing-credentials']
+
+  # ---------------------------------------------------------------------------
+  # SHELLCHECK - Shell Script Security
+  # Catches common shell scripting security issues
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        name: shellcheck - Lint shell scripts
+        args: ['--severity=warning']
+
+  # ---------------------------------------------------------------------------
+  # MARKDOWN LINT
+  # Ensures security documentation is properly formatted
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.41.0
+    hooks:
+      - id: markdownlint
+        name: markdownlint - Lint Markdown files
+        args: ['--disable', 'MD013', 'MD033', 'MD041', '--']
+
+# =============================================================================
+# LOCAL HOOKS (Uncomment to add custom checks)
+# =============================================================================
+# - repo: local
+#   hooks:
+#     - id: custom-secret-scan
+#       name: Custom secret patterns
+#       entry: grep -rn "password\s*=\s*['\"]" --include="*.py" --include="*.js" --include="*.ts"
+#       language: system
+#       pass_filenames: false
+#       always_run: true

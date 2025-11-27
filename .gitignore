@@ -1,6 +1,560 @@
+# =============================================================================
+# PRODUCTION SECURITY .GITIGNORE
+# Comprehensive patterns for secrets, credentials, and caches across all stacks
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# EXISTING PATTERNS
+# -----------------------------------------------------------------------------
 node_modules
 dist
 .DS_Store
 server/public
 vite.config.ts.*
 *.tar.gz
+
+# -----------------------------------------------------------------------------
+# SECRETS & CREDENTIALS (CRITICAL - NEVER COMMIT THESE)
+# -----------------------------------------------------------------------------
+
+# Environment files (all variants)
+.env
+.env.*
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+.env.staging
+*.env
+env.js
+env.json
+
+# API keys and tokens
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
+*.keystore
+*.jks
+*.truststore
+api_key*
+apikey*
+*_api_key*
+*_apikey*
+*.secret
+secrets.json
+secrets.yaml
+secrets.yml
+credentials.json
+credentials.yaml
+credentials.yml
+service-account*.json
+firebase-adminsdk*.json
+
+# AWS
+.aws/
+aws-credentials
+.boto
+credentials.csv
+
+# GCP
+gcloud/
+.gcp/
+application_default_credentials.json
+
+# Azure
+.azure/
+azure-credentials
+
+# SSH keys
+id_rsa
+id_rsa.pub
+id_dsa
+id_dsa.pub
+id_ecdsa
+id_ecdsa.pub
+id_ed25519
+id_ed25519.pub
+*.ppk
+known_hosts
+
+# GPG
+*.gpg
+*.asc
+secring.*
+pubring.*
+
+# HashiCorp Vault
+.vault-token
+vault.hcl
+
+# Terraform (state can contain secrets)
+*.tfstate
+*.tfstate.*
+.terraform/
+terraform.tfvars
+*.auto.tfvars
+
+# Kubernetes secrets
+kubeconfig
+.kube/config
+*-kubeconfig
+*.kubeconfig
+
+# Docker secrets
+.docker/config.json
+
+# Password managers / keychains
+*.kdbx
+*.agilekeychain
+*.keychain
+
+# JWT / Auth tokens
+*.jwt
+auth_token*
+access_token*
+refresh_token*
+
+# Crypto wallets (Web3)
+wallet.json
+keystore/
+*.wallet
+
+# -----------------------------------------------------------------------------
+# DATABASE DUMPS & BACKUPS (May contain sensitive data)
+# -----------------------------------------------------------------------------
+*.sql
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.bak
+*.backup
+dump/
+backups/
+*.rdb
+dump.rdb
+
+# -----------------------------------------------------------------------------
+# NODE.JS / JAVASCRIPT / TYPESCRIPT
+# -----------------------------------------------------------------------------
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Build outputs
+build/
+out/
+.next/
+.nuxt/
+.output/
+.vercel/
+.netlify/
+
+# TypeScript
+*.tsbuildinfo
+
+# ESLint / Prettier cache
+.eslintcache
+.prettiercache
+
+# Turbo
+.turbo/
+
+# Parcel
+.cache/
+.parcel-cache/
+
+# Vite
+*.local
+
+# Storybook
+storybook-static/
+
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
+
+# Cypress
+cypress/videos/
+cypress/screenshots/
+
+# -----------------------------------------------------------------------------
+# PYTHON
+# -----------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+.venv/
+ENV/
+env/
+.env.bak/
+.venv.bak/
+env.bak/
+venv.bak/
+.Python
+pythonenv*/
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+pytestdebug.log
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# mypy / pyright / type checkers
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+.pyre/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# ruff
+.ruff_cache/
+
+# -----------------------------------------------------------------------------
+# GO
+# -----------------------------------------------------------------------------
+*.exe
+*.exe~
+*.dll
+*.dylib
+*.test
+*.out
+
+# Go workspace
+go.work
+
+# Coverage
+coverage.out
+coverage.html
+
+# -----------------------------------------------------------------------------
+# RUST
+# -----------------------------------------------------------------------------
+target/
+Cargo.lock
+
+# Backup files from rustfmt
+**/*.rs.bk
+
+# -----------------------------------------------------------------------------
+# JAVA / KOTLIN / GRADLE / MAVEN
+# -----------------------------------------------------------------------------
+*.class
+*.jar
+*.war
+*.nar
+*.ear
+*.sar
+*.rar
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+
+# Gradle
+.gradle/
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+.idea_modules/
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# -----------------------------------------------------------------------------
+# C / C++
+# -----------------------------------------------------------------------------
+*.o
+*.a
+*.lib
+*.so
+*.so.*
+*.dylib
+*.app
+*.dSYM/
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+
+# -----------------------------------------------------------------------------
+# RUBY
+# -----------------------------------------------------------------------------
+*.gem
+*.rbc
+/.config
+/coverage/
+/.bundle/
+/vendor/bundle
+
+# RVM / rbenv / chruby
+.ruby-version
+.ruby-gemset
+.rvmrc
+
+# Rails
+/log/*
+/tmp/*
+!/log/.keep
+!/tmp/.keep
+/storage/*
+
+# -----------------------------------------------------------------------------
+# PHP
+# -----------------------------------------------------------------------------
+/vendor/
+composer.phar
+.phpunit.result.cache
+.php-cs-fixer.cache
+
+# Laravel
+storage/*.key
+
+# -----------------------------------------------------------------------------
+# .NET / C#
+# -----------------------------------------------------------------------------
+bin/
+obj/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+packages/
+project.lock.json
+artifacts/
+
+# -----------------------------------------------------------------------------
+# MOBILE (iOS / Android / React Native / Flutter)
+# -----------------------------------------------------------------------------
+
+# iOS
+*.ipa
+*.dSYM.zip
+*.dSYM
+Pods/
+DerivedData/
+*.xcuserstate
+
+# Android
+*.apk
+*.aab
+*.ap_
+*.dex
+local.properties
+
+# React Native
+.expo/
+.expo-shared/
+*.hprof
+
+# Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+
+# -----------------------------------------------------------------------------
+# EDITORS & IDEs
+# -----------------------------------------------------------------------------
+
+# VS Code (mostly keep .vscode, but ignore some)
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Vim
+*.swp
+*.swo
+*.swn
+*~
+.netrwhist
+
+# Emacs
+\#*\#
+.\#*
+*.elc
+auto-save-list
+tramp
+
+# -----------------------------------------------------------------------------
+# OPERATING SYSTEMS
+# -----------------------------------------------------------------------------
+
+# macOS
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+.directory
+.Trash-*
+
+# -----------------------------------------------------------------------------
+# LOGS & TEMPORARY FILES
+# -----------------------------------------------------------------------------
+*.log
+logs/
+log/
+*.tmp
+*.temp
+.cache/
+.temp/
+.tmp/
+temp/
+tmp/
+
+# -----------------------------------------------------------------------------
+# SECURITY SCANNING TOOLS (Local output - not for repo)
+# -----------------------------------------------------------------------------
+.gitleaks.toml.local
+gitleaks-report.*
+semgrep-results.*
+snyk-results.*
+trivy-results.*
+dependency-check-report.*
+*.sarif
+security-scan-output/
+
+# -----------------------------------------------------------------------------
+# TESTING & COVERAGE
+# -----------------------------------------------------------------------------
+coverage/
+.nyc_output/
+*.lcov
+
+# -----------------------------------------------------------------------------
+# DOCUMENTATION BUILD OUTPUT
+# -----------------------------------------------------------------------------
+docs/_build/
+site/
+public/
+
+# -----------------------------------------------------------------------------
+# CONTAINERS & INFRASTRUCTURE
+# -----------------------------------------------------------------------------
+.docker/
+docker-compose.override.yml
+docker-compose.local.yml
+
+# Kubernetes
+*.kubeconfig
+
+# Pulumi
+.pulumi/
+
+# Serverless
+.serverless/
+
+# SAM
+.aws-sam/
+
+# -----------------------------------------------------------------------------
+# SMART CONTRACTS (Solidity/Web3 - if applicable)
+# -----------------------------------------------------------------------------
+# Foundry
+broadcast/
+
+# Hardhat
+artifacts/
+typechain/
+typechain-types/
+
+# Slither output
+slither.db.json
+*.slither
+
+# Private keys for testing (NEVER use real keys)
+mnemonic.txt
+
+# -----------------------------------------------------------------------------
+# MISCELLANEOUS
+# -----------------------------------------------------------------------------
+
+# Compressed files (may contain sensitive backups)
+*.7z
+*.dmg
+*.gz
+*.iso
+*.rar
+*.tar
+*.zip
+
+# Core dumps
+core
+*.stackdump
+
+# Local configuration overrides
+*.local.*
+
+# SOPS encrypted files (decrypted versions)
+*.dec
+*.decrypted
+
+# Age encryption
+*.age

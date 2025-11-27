@@ -1,0 +1,211 @@
+# =============================================================================
+# SOCKET.DEV CONFIGURATION
+# Supply Chain Security for Dependencies
+# =============================================================================
+#
+# Socket.dev provides:
+# - Real-time supply chain attack detection
+# - Dependency risk scoring
+# - Malware and typosquat detection
+# - Install script analysis
+# - Network/filesystem access monitoring
+#
+# SETUP:
+# 1. Install the Socket GitHub App: https://github.com/apps/socket-security
+# 2. Authorize it for your repository
+# 3. This configuration will be automatically detected
+#
+# FREE TIER INCLUDES:
+# - 5 private repos
+# - Unlimited public repos
+# - Core security features
+# =============================================================================
+
+version: 2
+
+# ---------------------------------------------------------------------------
+# ISSUE RULES
+# Define which security issues should block PRs vs. warn
+# ---------------------------------------------------------------------------
+issueRules:
+  # -------------------------------------------------------------------------
+  # CRITICAL - Block PR merge
+  # -------------------------------------------------------------------------
+  
+  # Known malicious packages
+  knownMalware:
+    action: error
+    
+  # Packages that have been hijacked
+  hijackedPackage:
+    action: error
+    
+  # Critical CVEs with known exploits
+  criticalCVE:
+    action: error
+    
+  # Packages with install scripts that execute code
+  installScripts:
+    action: error
+    
+  # Typosquat packages (similar names to popular packages)
+  typosquat:
+    action: error
+    
+  # Protestware (packages with malicious protest code)
+  protestware:
+    action: error
+    
+  # Packages with obfuscated code
+  obfuscatedCode:
+    action: error
+
+  # -------------------------------------------------------------------------
+  # HIGH SEVERITY - Block PR merge
+  # -------------------------------------------------------------------------
+  
+  # High severity CVEs
+  highCVE:
+    action: error
+    
+  # Packages accessing the network unexpectedly
+  networkAccess:
+    action: error
+    
+  # Packages accessing the filesystem unexpectedly
+  filesystemAccess:
+    action: error
+    
+  # Packages spawning child processes
+  shellAccess:
+    action: error
+    
+  # Packages with eval() or similar dynamic code execution
+  unsafeEval:
+    action: error
+    
+  # Deprecated packages with no maintained alternative
+  deprecated:
+    action: warn
+    
+  # Packages with telemetry/tracking
+  telemetry:
+    action: warn
+
+  # -------------------------------------------------------------------------
+  # MEDIUM SEVERITY - Warn but allow
+  # -------------------------------------------------------------------------
+  
+  # Medium severity CVEs
+  mediumCVE:
+    action: warn
+    
+  # Packages with native code bindings
+  nativeCode:
+    action: warn
+    
+  # Packages with dynamic require/import
+  dynamicRequire:
+    action: warn
+    
+  # Unmaintained packages (no updates in 2+ years)
+  unmaintained:
+    action: warn
+    
+  # Packages with minimal documentation
+  noDocumentation:
+    action: ignore
+    
+  # Packages with few maintainers
+  fewMaintainers:
+    action: warn
+    
+  # Packages with non-permissive licenses
+  nonPermissiveLicense:
+    action: warn
+    
+  # Unpopular packages (low download counts)
+  unpopular:
+    action: ignore
+
+  # -------------------------------------------------------------------------
+  # LOW SEVERITY - Informational only
+  # -------------------------------------------------------------------------
+  
+  # Low severity CVEs
+  lowCVE:
+    action: warn
+    
+  # Missing license
+  noLicense:
+    action: warn
+    
+  # Packages with floating version ranges
+  floatingDependency:
+    action: ignore
+    
+  # New packages (published recently)
+  newPackage:
+    action: warn
+    
+  # Git dependencies (not from registry)
+  gitDependency:
+    action: warn
+    
+  # HTTP dependencies (insecure)
+  httpDependency:
+    action: error
+
+# ---------------------------------------------------------------------------
+# PULL REQUEST BEHAVIOR
+# ---------------------------------------------------------------------------
+pullRequests:
+  # Fail the PR check if any error-level issues are found
+  failOnError: true
+  
+  # Add inline comments for issues
+  inlineComments: true
+  
+  # Add a summary comment on the PR
+  summaryComment: true
+
+# ---------------------------------------------------------------------------
+# BRANCH PROTECTION
+# Recommended branches to enforce checks on
+# ---------------------------------------------------------------------------
+branches:
+  - main
+  - master
+  - production
+  - release/*
+  - develop
+
+# ---------------------------------------------------------------------------
+# IGNORED PACKAGES
+# Packages to skip scanning (use sparingly)
+# ---------------------------------------------------------------------------
+ignore:
+  # Example: Ignore specific packages if they're false positives
+  # - package: "some-package"
+  #   reason: "Known false positive, reviewed on 2024-01-15"
+  []
+
+# ---------------------------------------------------------------------------
+# ALLOWED LICENSES
+# Permissive licenses that don't require review
+# ---------------------------------------------------------------------------
+allowedLicenses:
+  - MIT
+  - ISC
+  - BSD-2-Clause
+  - BSD-3-Clause
+  - Apache-2.0
+  - 0BSD
+  - CC0-1.0
+  - Unlicense
+  - WTFPL
+  - CC-BY-3.0
+  - CC-BY-4.0
+  - Zlib
+  - Python-2.0
+  - BlueOak-1.0.0

@@ -1,0 +1,257 @@
+# =============================================================================
+# SEMGREP CUSTOM RULES: AI/Copilot Generated Code Patterns
+# Catches common security issues in AI-generated code
+# =============================================================================
+
+rules:
+  # ---------------------------------------------------------------------------
+  # Insecure Randomness
+  # AI often generates Math.random() for security-sensitive operations
+  # ---------------------------------------------------------------------------
+  - id: insecure-random-for-security
+    patterns:
+      - pattern-either:
+          - pattern: |
+              Math.random()
+          - pattern: |
+              $X = Math.random()
+    pattern-inside: |
+      function $FUNC(...) {
+        ...
+      }
+    pattern-not-inside: |
+      // test...
+    message: |
+      Math.random() is not cryptographically secure. AI tools often generate this for tokens, passwords, or security-sensitive operations.
+      
+      Recommendation:
+      - Use crypto.randomBytes() in Node.js
+      - Use crypto.getRandomValues() in browsers
+      - Use secrets.token_hex() in Python
+    severity: WARNING
+    languages:
+      - javascript
+      - typescript
+    metadata:
+      category: security
+      subcategory: cryptography
+      cwe: "CWE-338: Use of Cryptographically Weak PRNG"
+      confidence: MEDIUM
+
+  # ---------------------------------------------------------------------------
+  # Unsafe Deserialization
+  # AI often generates eval() or JSON.parse without validation
+  # ---------------------------------------------------------------------------
+  - id: unsafe-eval
+    patterns:
+      - pattern-either:
+          - pattern: eval($X)
+          - pattern: new Function($X)
+          - pattern: setTimeout($X, ...)
+          - pattern: setInterval($X, ...)
+    pattern-not: eval("...")
+    pattern-not: new Function("...")
+    message: |
+      Dynamic code execution detected. This is a common AI-generated pattern that can lead to code injection.
+      
+      Recommendation:
+      - Avoid eval() entirely
+      - Use JSON.parse() for data
+      - Use a sandboxed environment if dynamic code is required
+    severity: ERROR
+    languages:
+      - javascript
+      - typescript
+    metadata:
+      category: security
+      subcategory: injection
+      cwe: "CWE-94: Improper Control of Generation of Code"
+      owasp: "A03:2021 - Injection"
+      confidence: HIGH
+
+  - id: python-unsafe-eval
+    patterns:
+      - pattern-either:
+          - pattern: eval($X)
+          - pattern: exec($X)
+          - pattern: compile($X, ...)
+    message: |
+      Dynamic code execution in Python. Common in AI-generated code.
+      
+      Recommendation:
+      - Use ast.literal_eval() for safe evaluation of literals
+      - Avoid exec() entirely
+      - Use proper data parsing methods
+    severity: ERROR
+    languages:
+      - python
+    metadata:
+      category: security
+      subcategory: injection
+      cwe: "CWE-94: Improper Control of Generation of Code"
+      confidence: HIGH
+
+  # ---------------------------------------------------------------------------
+  # Unsafe Pickle/Deserialization
+  # ---------------------------------------------------------------------------
+  - id: unsafe-pickle
+    patterns:
+      - pattern-either:
+          - pattern: pickle.loads($X)
+          - pattern: pickle.load($X)
+          - pattern: cPickle.loads($X)
+          - pattern: cPickle.load($X)
+    message: |
+      Pickle deserialization can execute arbitrary code. Never unpickle untrusted data.
+      
+      Recommendation:
+      - Use JSON for data serialization
+      - Use MessagePack or Protocol Buffers
+      - If pickle is required, use hmac to verify integrity
+    severity: ERROR
+    languages:
+      - python
+    metadata:
+      category: security
+      subcategory: deserialization
+      cwe: "CWE-502: Deserialization of Untrusted Data"
+      confidence: HIGH
+
+  # ---------------------------------------------------------------------------
+  # Hardcoded localhost/127.0.0.1 (often left by AI)
+  # ---------------------------------------------------------------------------
+  - id: hardcoded-localhost
+    patterns:
+      - pattern-either:
+          - pattern: |
+              "http://localhost:..."
+          - pattern: |
+              "http://127.0.0.1:..."
+          - pattern: |
+              'http://localhost:...'
+          - pattern: |
+              'http://127.0.0.1:...'
+    pattern-not-inside: |
+      // test...
+    pattern-not-inside: |
+      /* test...
+    message: |
+      Hardcoded localhost URL detected. AI often leaves these in generated code.
+      
+      Recommendation:
+      - Use environment variables for URLs
+      - Use relative URLs where possible
+      - Configure base URL in a central location
+    severity: WARNING
+    languages:
+      - javascript
+      - typescript
+      - python
+    metadata:
+      category: security
+      subcategory: configuration
+      cwe: "CWE-1188: Insecure Default Initialization of Resource"
+      confidence: MEDIUM
+
+  # ---------------------------------------------------------------------------
+  # TODO/FIXME Security Comments (AI often leaves these)
+  # ---------------------------------------------------------------------------
+  - id: security-todo-comment
+    pattern-regex: |
+      (?i)(TODO|FIXME|XXX|HACK|BUG).*(security|auth|password|secret|token|credential|encrypt|hash|vulnerable|unsafe|insecure)
+    message: |
+      Security-related TODO/FIXME comment found. These are often left by AI tools and should be addressed before production.
+      
+      Recommendation:
+      - Review and address the security concern
+      - Create a tracking issue if not immediately fixable
+      - Remove placeholder code
+    severity: WARNING
+    languages:
+      - generic
+    metadata:
+      category: security
+      subcategory: documentation
+      cwe: "CWE-1164: Irrelevant Code"
+      confidence: MEDIUM
+
+  # ---------------------------------------------------------------------------
+  # Placeholder/Example Values (common AI pattern)
+  # ---------------------------------------------------------------------------
+  - id: placeholder-credentials
+    pattern-regex: |
+      (?i)(password|secret|token|key)\s*[=:]\s*["'](example|placeholder|changeme|test123|password123?|admin|default|TODO|your[_-]?|my[_-]?)
+    message: |
+      Placeholder or example credentials detected. AI tools often generate these as examples.
+      
+      Recommendation:
+      - Replace with actual secrets management
+      - Use environment variables
+      - Remove before committing
+    severity: ERROR
+    languages:
+      - generic
+    metadata:
+      category: security
+      subcategory: credentials
+      cwe: "CWE-798: Use of Hard-coded Credentials"
+      confidence: HIGH
+
+  # ---------------------------------------------------------------------------
+  # Disabled Security Features
+  # ---------------------------------------------------------------------------
+  - id: disabled-ssl-verification
+    patterns:
+      - pattern-either:
+          - pattern: verify=False
+          - pattern: rejectUnauthorized: false
+          - pattern: NODE_TLS_REJECT_UNAUTHORIZED = "0"
+          - pattern: InsecureSkipVerify: true
+    message: |
+      SSL/TLS verification disabled. This is often done in AI-generated code for "simplicity".
+      
+      Recommendation:
+      - Always verify SSL certificates in production
+      - Use proper certificate management
+      - Only disable for local development with clear comments
+    severity: ERROR
+    languages:
+      - generic
+    metadata:
+      category: security
+      subcategory: cryptography
+      cwe: "CWE-295: Improper Certificate Validation"
+      confidence: HIGH
+
+  # ---------------------------------------------------------------------------
+  # SQL String Concatenation (common AI pattern)
+  # ---------------------------------------------------------------------------
+  - id: sql-string-concat
+    patterns:
+      - pattern-either:
+          - pattern: |
+              "SELECT ... " + $VAR + " ..."
+          - pattern: |
+              'SELECT ... ' + $VAR + ' ...'
+          - pattern: |
+              `SELECT ... ${$VAR} ...`
+          - pattern: |
+              f"SELECT ... {$VAR} ..."
+    message: |
+      SQL query with string concatenation detected. Use parameterized queries instead.
+      
+      Recommendation:
+      - Use prepared statements
+      - Use ORM methods
+      - Use parameterized queries
+    severity: ERROR
+    languages:
+      - javascript
+      - typescript
+      - python
+    metadata:
+      category: security
+      subcategory: injection
+      cwe: "CWE-89: SQL Injection"
+      owasp: "A03:2021 - Injection"
+      confidence: HIGH
