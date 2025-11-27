@@ -2,13 +2,17 @@
 
 ## Overview
 
-This repository contains a production-ready security infrastructure setup for any codebase. It provides automated security scanning, secret detection, dependency analysis, and web security hardening.
+This repository contains a production-ready security infrastructure setup for any codebase. It provides automated security scanning, secret detection, dependency analysis, and web security hardening. Includes a landing page showcasing all security tools.
 
-**Current State**: Security tooling fully configured, ready for any tech stack.
+**Current State**: Security tooling fully configured with landing page.
 
 ## Project Structure
 
 ```
+├── client/src/
+│   ├── pages/
+│   │   └── home.tsx            # Security landing page
+│   └── App.tsx                 # Main app router
 ├── .github/
 │   ├── dependabot.yml          # Multi-ecosystem dependency updates
 │   ├── socket.yml              # Supply chain security config
@@ -37,6 +41,7 @@ This repository contains a production-ready security infrastructure setup for an
 | Nov 2024 | Added Gitleaks, Semgrep, Socket.dev, Dependabot |
 | Nov 2024 | Created custom Semgrep rules for AI-generated code |
 | Nov 2024 | Added Express.js security headers middleware |
+| Nov 2024 | Added security landing page showcasing all tools |
 
 ## Security Tools Summary
 
