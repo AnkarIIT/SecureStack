@@ -1,0 +1,130 @@
+# =============================================================================
+# GITLEAKS CONFIGURATION
+# Custom rules and allowlists for secret detection
+# =============================================================================
+#
+# Documentation: https://github.com/gitleaks/gitleaks
+#
+# This file customizes Gitleaks behavior:
+# - Extends default rules
+# - Adds allowlist patterns for false positives
+# - Configures file/path exclusions
+# =============================================================================
+
+title = "Gitleaks Configuration"
+
+# =============================================================================
+# EXTEND DEFAULT RULES
+# These add to the built-in Gitleaks rules
+# =============================================================================
+
+# Uncomment to add custom rules:
+# [[rules]]
+# id = "custom-api-key"
+# description = "Custom API Key Pattern"
+# regex = '''custom[_-]?api[_-]?key["\s]*[:=]["\s]*[A-Za-z0-9+/=]{32,}'''
+# secretGroup = 1
+# tags = ["custom", "api-key"]
+
+# =============================================================================
+# ALLOWLIST - GLOBAL
+# Patterns that are always allowed (use sparingly!)
+# =============================================================================
+
+[allowlist]
+description = "Global allowlist"
+
+# Regex patterns to ignore (use specific patterns, not broad ones)
+regexes = [
+  # Example test credentials that are obviously fake
+  '''(?i)example[_-]?api[_-]?key''',
+  '''(?i)test[_-]?api[_-]?key''',
+  '''(?i)placeholder[_-]?key''',
+  '''(?i)your[_-]?api[_-]?key[_-]?here''',
+  
+  # Specific known false positives (add as needed)
+  # '''SPECIFIC_FALSE_POSITIVE_PATTERN''',
+]
+
+# Paths to always ignore (careful with this!)
+paths = [
+  # Test fixtures that intentionally contain fake secrets
+  '''test/fixtures/.*''',
+  '''tests/fixtures/.*''',
+  '''__tests__/fixtures/.*''',
+  '''spec/fixtures/.*''',
+  
+  # Documentation examples
+  '''docs/examples/.*''',
+  '''examples/.*\.example''',
+  
+  # Generated files
+  '''\.min\.js$''',
+  '''\.min\.css$''',
+  '''dist/.*''',
+  '''build/.*''',
+  '''node_modules/.*''',
+  '''vendor/.*''',
+  
+  # Lock files (may contain hashes that trigger false positives)
+  '''package-lock\.json$''',
+  '''yarn\.lock$''',
+  '''pnpm-lock\.yaml$''',
+  '''poetry\.lock$''',
+  '''Cargo\.lock$''',
+  '''go\.sum$''',
+  '''composer\.lock$''',
+  '''Gemfile\.lock$''',
+]
+
+# Specific commits to ignore (add commit SHAs that are known false positives)
+commits = [
+  # '''abc123def456789...''',
+]
+
+# =============================================================================
+# RULE-SPECIFIC ALLOWLISTS
+# Override behavior for specific rule types
+# =============================================================================
+
+# Example: Allow certain patterns for AWS keys (e.g., in CI documentation)
+# [[rules.allowlist]]
+# description = "AWS key allowlist for CI docs"
+# regexTarget = "match"
+# regexes = [
+#   '''AKIA.*EXAMPLE.*''',
+# ]
+
+# =============================================================================
+# PATH-SPECIFIC RULES
+# Different scanning behavior for different paths
+# =============================================================================
+
+# Stricter scanning for sensitive directories
+# [[rules]]
+# id = "strict-secrets-in-src"
+# description = "Extra strict secret detection in source code"
+# path = '''src/.*'''
+# regex = '''(?i)(password|secret|token|api[_-]?key)\s*[:=]\s*["'][^"']{8,}["']'''
+# tags = ["source-code", "strict"]
+
+# =============================================================================
+# NOTES
+# =============================================================================
+#
+# Adding to Allowlist:
+# 1. First verify it's truly a false positive
+# 2. Use the most specific pattern possible
+# 3. Document why it's being allowed
+# 4. Prefer path-based exclusions over regex
+#
+# Testing Changes:
+#   gitleaks detect --source . --verbose --no-git
+#   gitleaks detect --source . --config .gitleaks.toml --verbose
+#
+# Common False Positives:
+# - Base64 encoded strings in tests
+# - UUID/GUID patterns
+# - Long random strings in documentation
+# - Hash values in lock files
+# =============================================================================
